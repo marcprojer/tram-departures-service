@@ -12,15 +12,10 @@ async function fetchDepartures() {
             `https://transport.opendata.ch/v1/stationboard?limit=10&transportations=tram&station=${encodeURIComponent(STATION_KEY)}`
         );
         cachedData = res.data.stationboard.map(dep => {
-            // Hilfsfunktion für ISO-Format mit Zeitzone
             function toIsoWithTimezone(str) {
                 if (!str) return null;
-                // Falls schon ISO, einfach zurückgeben
                 if (str.endsWith('Z') || str.match(/:\d\d[+-]\d\d:\d\d$/)) return str;
-                // Wandelt z.B. 2025-09-09T12:34:56+0200 oder 2025-09-09 12:34:56+0200 in 2025-09-09T12:34:56+02:00
-                // 1. Ersetze Leerzeichen durch T
                 let iso = str.replace(' ', 'T');
-                // 2. Füge Doppelpunkt in der Zeitzone ein
                 iso = iso.replace(/([+-]\d{2})(\d{2})$/, '$1:$2');
                 return iso;
             }
@@ -31,7 +26,14 @@ async function fetchDepartures() {
                 abfahrt_geplant: toIsoWithTimezone(dep.stop.departure),
                 abfahrt_live: dep.stop.prognosis ? toIsoWithTimezone(dep.stop.prognosis.departure) : null
             };
-        });
+        })
+        // Sortiere nach abfahrt_live (falls vorhanden, sonst abfahrt_geplant)
+        .sort((a, b) => {
+            const aTime = a.abfahrt_live ? new Date(a.abfahrt_live) : new Date(a.abfahrt_geplant);
+            const bTime = b.abfahrt_live ? new Date(b.abfahrt_live) : new Date(b.abfahrt_geplant);
+            return aTime - bTime;
+        })
+        .slice(0, 10);
     } catch (err) {
         console.error("Fehler beim Abrufen der Daten:", err.message);
     }
