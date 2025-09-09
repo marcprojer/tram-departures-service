@@ -11,14 +11,19 @@
   </style>
 </head>
 <body>
-  <h1>Nächste 5 Tram-Abfahrten</h1>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+  <h1>Nächste 10 Tram-Abfahrten</h1>
+    <div id="clock" style="font-size: 1.2em; font-family: monospace;"></div>
+  </div>
   <table id="departures">
     <thead>
       <tr>
         <th>Linie</th>
         <th>Richtung</th>
+        <th>Name</th>
         <th>Abfahrt (geplant)</th>
         <th>Abfahrt (live)</th>
+        <th>Verspätung</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -31,17 +36,41 @@
       tbody.innerHTML = '';
       departures.forEach(dep => {
         const tr = document.createElement('tr');
+        // Verspätung berechnen
+        let delayCell = '';
+        if (dep.abfahrt_live && dep.abfahrt_geplant) {
+          const planned = new Date(dep.abfahrt_geplant);
+          const live = new Date(dep.abfahrt_live);
+          const diffMin = Math.round((live - planned) / 60000);
+          if (diffMin > 0) {
+            delayCell = `<td>+${diffMin}</td>`;
+          } else if (diffMin < 0) {
+            delayCell = `<td>${diffMin}</td>`;
+          } else {
+            delayCell = '<td>on time</td>';
+          }
+        } else {
+          delayCell = '<td>on time</td>';
+        }
         tr.innerHTML = `
           <td>${dep.linie}</td>
           <td>${dep.richtung}</td>
-          <td>${dep.abfahrt_geplant ? new Date(dep.abfahrt_geplant).toLocaleTimeString() : '-'}</td>
-          <td>${dep.abfahrt_live ? new Date(dep.abfahrt_live).toLocaleTimeString() : '-'}</td>
+          <td>${dep.name || '-'}</td>
+          <td>${dep.abfahrt_geplant ? new Date(dep.abfahrt_geplant).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : '-'}</td>
+          <td>${dep.abfahrt_live ? new Date(dep.abfahrt_live).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : '-'}</td>
+          ${delayCell}
         `;
         tbody.appendChild(tr);
       });
     }
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent = now.toLocaleTimeString();
+    }
     loadDepartures();
     setInterval(loadDepartures, 30 * 1000); // alle 30 Sekunden aktualisieren
+    updateClock();
+    setInterval(updateClock, 1000); // Uhr jede Sekunde aktualisieren
   </script>
 </body>
 </html>

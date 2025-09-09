@@ -20,7 +20,8 @@ node server.js
 
 ## Node.js
 
-```bash
 Start node server:
+
+```bash
 node server.js
 ```
