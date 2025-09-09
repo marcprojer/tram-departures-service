@@ -22,9 +22,9 @@ async function fetchDepartures() {
     }
 }
 
-// Initial & alle 90 Sekunden aktualisieren
+// Initial & alle 15 Sekunden aktualisieren
 fetchDepartures();
-setInterval(fetchDepartures, 90 * 1000);
+setInterval(fetchDepartures, 15 * 1000);
 
 const app = express();
 app.use(cors());
