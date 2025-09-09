@@ -9,7 +9,7 @@ let cachedData = { trams: [], buses: [] };
 async function fetchDepartures() {
     try {
         const res = await axios.get(
-            `https://transport.opendata.ch/v1/stationboard?limit=20&station=${encodeURIComponent(STATION_KEY)}`
+            `https://transport.opendata.ch/v1/stationboard?limit=30&station=${encodeURIComponent(STATION_KEY)}`
         );
         function toIsoWithTimezone(str) {
             if (!str) return null;
@@ -32,14 +32,14 @@ async function fetchDepartures() {
                 const bTime = b.abfahrt_live ? new Date(b.abfahrt_live) : new Date(b.abfahrt_geplant);
                 return aTime - bTime;
             })
-            .slice(0, 10);
+            .slice(0, 15);
         cachedData.buses = all.filter(d => d.category && d.category.toLowerCase() === 'b')
             .sort((a, b) => {
                 const aTime = a.abfahrt_live ? new Date(a.abfahrt_live) : new Date(a.abfahrt_geplant);
                 const bTime = b.abfahrt_live ? new Date(b.abfahrt_live) : new Date(b.abfahrt_geplant);
                 return aTime - bTime;
             })
-            .slice(0, 10);
+            .slice(0, 15);
     } catch (err) {
         console.error("Fehler beim Abrufen der Daten:", err.message);
     }
