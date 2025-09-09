@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Tram-Abfahrten</title>
+  <style>
+    body { font-family: sans-serif; background: #222; color: #fff; }
+    table { width: 100%; border-collapse: collapse; margin-top: 2em; }
+    th, td { padding: 0.5em 1em; border: 1px solid #444; text-align: left; }
+    th { background: #333; }
+  </style>
+</head>
+<body>
+  <h1>Nächste 5 Tram-Abfahrten</h1>
+  <table id="departures">
+    <thead>
+      <tr>
+        <th>Linie</th>
+        <th>Richtung</th>
+        <th>Abfahrt (geplant)</th>
+        <th>Abfahrt (live)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    async function loadDepartures() {
+      const res = await fetch('/api/abfahrten');
+      const departures = await res.json();
+      const tbody = document.querySelector('#departures tbody');
+      tbody.innerHTML = '';
+      departures.forEach(dep => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${dep.linie}</td>
+          <td>${dep.richtung}</td>
+          <td>${dep.abfahrt_geplant ? new Date(dep.abfahrt_geplant).toLocaleTimeString() : '-'}</td>
+          <td>${dep.abfahrt_live ? new Date(dep.abfahrt_live).toLocaleTimeString() : '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    loadDepartures();
+    setInterval(loadDepartures, 30 * 1000); // alle 30 Sekunden aktualisieren
+  </script>
+</body>
+</html>
