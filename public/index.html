@@ -19,22 +19,27 @@
   </style>
 </head>
 <body>
-  <div style="display: flex; justify-content: space-between; align-items: center;">
+  <div class="header-row">
+    <div class="station-banner">
+      <span class="station-name">Escher-Wyss-Platz</span>
+    </div>
+    <div id="clock" class="big-clock"></div>
+  </div>
+  <div style="display: flex; justify-content: flex-start; align-items: center;">
     <div style="display: flex; align-items: center; gap: 0.5em;">
       <h1 class="headline">Nächste 10 Tram-Abfahrten</h1>
       <i id="refresh-icon" class="fa-solid fa-arrows-rotate headline-refresh" style="cursor: pointer;"></i>
     </div>
-    <div id="clock" style="font-size: 1.2em; font-family: monospace;"></div>
   </div>
-  <table id="departures">
-    <thead>
-      <tr>
-        <th>Linie</th>
-        <th>Richtung</th>
-        <th class="verspaetung">Verspätung</th>
-        <th>Abfahrt (live)</th>
+  <table id="departures" class="departures-table">
+    <tbody>
+      <tr class="departures-header-row">
+        <td>Linie</td>
+        <td>Richtung</td>
+        <td class="verspaetung"></td>
+        <td>Abfahrt (live)</td>
       </tr>
-    </thead>
+    </tbody>
     <tbody></tbody>
   </table>
   <script>
@@ -52,8 +57,10 @@
       const res = await fetch('/api/abfahrten');
       const data = await res.json();
       // Trams
-      const tramTbody = document.querySelector('#departures tbody');
-      tramTbody.innerHTML = '';
+  const tramTable = document.getElementById('departures');
+  // Die erste tbody ist der Header, die zweite ist für die Daten
+  const tramTbody = tramTable.querySelectorAll('tbody')[1];
+  tramTbody.innerHTML = '';
       // Zeige die nächsten 10 zukünftigen Abfahrten aus den ersten 15 gelieferten
       const now = new Date();
       const futureTrams = data.trams
@@ -80,6 +87,7 @@
         } else if (diffMin > 0) {
           abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
         }
+        tr.className = 'departures-data-row';
         tr.innerHTML = `
           <td>${dep.linie}</td>
           <td>${dep.richtung}</td>
@@ -109,21 +117,23 @@
         document.body.appendChild(busTitleWrap);
         busTable = document.createElement('table');
         busTable.id = 'bus-departures';
+        busTable.className = 'departures-table';
         busTable.innerHTML = `
-          <thead>
-            <tr>
-              <th>Linie</th>
-              <th>Richtung</th>
-              <th class="verspaetung">Verspätung</th>
-              <th>Abfahrt (live)</th>
+          <tbody>
+            <tr class="departures-header-row">
+              <td>Linie</td>
+              <td>Richtung</td>
+              <td class="verspaetung"></td>
+              <td>Abfahrt (live)</td>
             </tr>
-          </thead>
+          </tbody>
           <tbody></tbody>
         `;
         document.body.appendChild(busTable);
       }
-      const busTbody = busTable.querySelector('tbody');
-      busTbody.innerHTML = '';
+  // Die erste tbody ist der Header, die zweite ist für die Daten
+  const busTbody = busTable.querySelectorAll('tbody')[1];
+  busTbody.innerHTML = '';
       // Zeige die nächsten 10 zukünftigen Bus-Abfahrten aus den ersten 15 gelieferten
       const futureBuses = data.buses
         .filter(dep => dep.abfahrt_live && Math.round((new Date(dep.abfahrt_live) - now) / 60000) >= 0)
@@ -149,6 +159,7 @@
         } else if (diffMin > 0) {
           abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
         }
+        tr.className = 'departures-data-row';
         tr.innerHTML = `
           <td>${dep.linie}</td>
           <td>${dep.richtung}</td>
