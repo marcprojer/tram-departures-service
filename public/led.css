@@ -1,3 +1,47 @@
+.line-badge {
+  display: inline-block;
+  min-width: 2em;
+  padding: 0.15em 0.7em 0.15em 0.7em;
+  margin-right: 0.5em;
+  border-radius: 5px;
+  background: #11296F;
+  color: #fff;
+  font-family: 'Doto', sans-serif;
+  font-weight: 700;
+  font-size: 1em;
+  text-align: center;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  vertical-align: middle;
+  transition: background 0.2s, color 0.2s;
+}
+.line-badge.tram-3 { background: #00892f; color: #fff; }
+.line-badge.tram-4 { background: #11296f; color: #fff; }
+.line-badge.tram-6 { background: #ca7d3c; color: #000; }
+.line-badge.tram-7 { background: #000; color: #fff; }
+.line-badge.tram-8 { background: #8ab51f; color: #000; }
+.line-badge.tram-9 { background: #11296f; color: #fff; }
+.line-badge.tram-11 { background: #00892f; color: #fff; }
+.line-badge.tram-13 { background: #ffc100; color: #000; }
+.line-badge.tram-14 { background: #008dc5; color: #fff; }
+.line-badge.tram-17 { background: #8e224d; color: #fff; }
+.line-badge.bus { background: #fff; color: #000; border: 1px solid #bbb; }
+.line-badge {
+  display: inline-block;
+  min-width: 2em;
+  padding: 0.15em 0.7em 0.15em 0.7em;
+  margin-right: 0.5em;
+  border-radius: 5px;
+  background: #11296F;
+  color: #fff;
+  font-family: 'Doto', sans-serif;
+  font-weight: 700;
+  font-size: 1em;
+  text-align: center;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  vertical-align: middle;
+}
 @font-face {
   font-family: 'Helvetica Neue';
   src: local('Helvetica Neue Medium'), local('HelveticaNeue-Medium'),
@@ -78,6 +122,9 @@ body {
   border-left: none;
   border-right: none;
   padding: 0.5em 1em;
+  font-family: 'Doto', sans-serif !important;
+  font-weight: 400 !important;
+  font-feature-settings: 'tnum';
 }
 i.fa-solid.fa-bus-simple {
   color: #ffb300;

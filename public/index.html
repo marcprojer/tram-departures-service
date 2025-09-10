@@ -88,8 +88,16 @@
           abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
         }
         tr.className = 'departures-data-row';
+        let badgeClass = '';
+        if (dep.category && dep.category.toLowerCase() === 't') {
+          badgeClass = `line-badge tram-${dep.linie}`;
+        } else if (dep.category && dep.category.toLowerCase() === 'b') {
+          badgeClass = 'line-badge bus';
+        } else {
+          badgeClass = 'line-badge';
+        }
         tr.innerHTML = `
-          <td>${dep.linie}</td>
+          <td><span class=\"${badgeClass}\">${dep.linie}</span></td>
           <td>${dep.richtung}</td>
           ${delayCell}
           ${abfahrtLiveCell}
@@ -161,7 +169,7 @@
         }
         tr.className = 'departures-data-row';
         tr.innerHTML = `
-          <td>${dep.linie}</td>
+          <td><span class="line-badge bus">${dep.linie}</span></td>
           <td>${dep.richtung}</td>
           ${delayCell}
           ${abfahrtLiveCell}
