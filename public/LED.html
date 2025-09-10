@@ -3,35 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <title>Tram-Abfahrten</title>
-  <style>
-    body { font-family: sans-serif; background: #222; color: #fff; }
-    table { width: 100%; border-collapse: collapse; margin-top: 2em; }
-  th, td { padding: 0.5em 1em; border: 1px solid #444; text-align: left; }
-  th.verspaetung, td.verspaetung { text-align: right; }
-    th { background: #333; }
-    i.fa-solid.fa-bus-simple { color: #ffffff; font-size: 1.2em; }
-  </style>
+  <link rel="stylesheet" href="led.css">
   <!-- Font Awesome CDN for bus icon -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .headline {
+      font-family: sans-serif;
+      font-size: 2em;
+      font-weight: 400;
+      margin: 0;
+    }
+    .headline-refresh {
+      font-size: 1.3em;
+    }
+  </style>
 </head>
 <body>
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <div style="display: flex; align-items: center; gap: 0.5em;">
-      <h1>Nächste 10 Tram-Abfahrten</h1>
-      <i id="refresh-icon" class="fa-solid fa-arrows-rotate" style="cursor: pointer;"></i>
+      <h1 class="headline">Nächste 10 Tram-Abfahrten</h1>
+      <i id="refresh-icon" class="fa-solid fa-arrows-rotate headline-refresh" style="cursor: pointer;"></i>
     </div>
     <div id="clock" style="font-size: 1.2em; font-family: monospace;"></div>
   </div>
-  <style>
-    .rotate-refresh {
-      animation: rotate-refresh-anim 1s linear;
-      color: #00c853 !important;
-    }
-    @keyframes rotate-refresh-anim {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
   <table id="departures">
     <thead>
       <tr>
@@ -49,6 +43,11 @@
       if (refreshIcon) {
         refreshIcon.classList.add('rotate-refresh');
         setTimeout(() => refreshIcon.classList.remove('rotate-refresh'), 1000);
+      }
+      const refreshIconBus = document.getElementById('refresh-icon-bus');
+      if (refreshIconBus) {
+        refreshIconBus.classList.add('rotate-refresh');
+        setTimeout(() => refreshIconBus.classList.remove('rotate-refresh'), 1000);
       }
       const res = await fetch('/api/abfahrten');
       const data = await res.json();
@@ -79,7 +78,7 @@
         if (diffMin === 0) {
           abfahrtLiveCell = `<td><i class='fa-solid fa-bus-simple'></i></td>`;
         } else if (diffMin > 0) {
-          abfahrtLiveCell = `<td>${diffMin} min</td>`;
+          abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
         }
         tr.innerHTML = `
           <td>${dep.linie}</td>
@@ -93,10 +92,21 @@
       // Busse
       let busTable = document.getElementById('bus-departures');
       if (!busTable) {
-        const busTitle = document.createElement('h2');
+        const busTitleWrap = document.createElement('div');
+        busTitleWrap.style.display = 'flex';
+        busTitleWrap.style.alignItems = 'center';
+        busTitleWrap.style.gap = '0.5em';
+        busTitleWrap.style.marginTop = '2em';
+        const busTitle = document.createElement('h1');
         busTitle.textContent = 'Nächste 10 Bus-Abfahrten';
-        busTitle.style.marginTop = '2em';
-        document.body.appendChild(busTitle);
+        busTitle.className = 'headline';
+        const busRefreshIcon = document.createElement('i');
+        busRefreshIcon.className = 'fa-solid fa-arrows-rotate headline-refresh';
+        busRefreshIcon.id = 'refresh-icon-bus';
+        busRefreshIcon.style.cursor = 'pointer';
+        busTitleWrap.appendChild(busTitle);
+        busTitleWrap.appendChild(busRefreshIcon);
+        document.body.appendChild(busTitleWrap);
         busTable = document.createElement('table');
         busTable.id = 'bus-departures';
         busTable.innerHTML = `
@@ -104,7 +114,7 @@
             <tr>
               <th>Linie</th>
               <th>Richtung</th>
-              <th>Verspätung</th>
+              <th class="verspaetung">Verspätung</th>
               <th>Abfahrt (live)</th>
             </tr>
           </thead>
@@ -137,7 +147,7 @@
         if (diffMin === 0) {
           abfahrtLiveCell = `<td><i class='fa-solid fa-bus-simple'></i></td>`;
         } else if (diffMin > 0) {
-          abfahrtLiveCell = `<td>${diffMin} min</td>`;
+          abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
         }
         tr.innerHTML = `
           <td>${dep.linie}</td>

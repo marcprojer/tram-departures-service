@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Doto:wght@400&display=swap');
+
+body {
+  font-family: 'Doto', sans-serif;
+  background: #222;
+  color: #fff;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2em;
+}
+th, td {
+  padding: 0.5em 1em;
+  border: 1px solid #444;
+  text-align: left;
+  color: #ffb300 !important;
+}
+th {
+  background: #333;
+}
+i.fa-solid.fa-bus-simple {
+  color: #ffb300;
+  font-size: 1.2em;
+}
+th.verspaetung, td.verspaetung {
+  text-align: right;
+}
+.rotate-refresh {
+  animation: rotate-refresh-anim 1s linear;
+  color: #00c853 !important;
+}
+@keyframes rotate-refresh-anim {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.minutenanzeige {
+  letter-spacing: 0;
+  font-feature-settings: 'tnum';
+}
