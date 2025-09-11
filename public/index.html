@@ -98,8 +98,9 @@
           badgeClass = 'line-badge';
         }
         tr.innerHTML = `
+
           <td><span class=\"${badgeClass}\">${dep.linie}</span></td>
-          <td>${dep.richtung}</td>
+          <td>${dep.richtung.replace(/^Zürich,? ?/, '')}</td>
           ${delayCell}
           ${abfahrtLiveCell}
         `;
@@ -169,13 +170,9 @@
           abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
         }
         tr.className = 'departures-data-row';
-        let busBadgeClass = `line-badge bus`;
-        if (dep.linie === '33') busBadgeClass += ' bus-33';
-        if (dep.linie === '72') busBadgeClass += ' bus-72';
-        if (dep.linie === '83') busBadgeClass += ' bus-83';
         tr.innerHTML = `
-          <td><span class="${busBadgeClass}">${dep.linie}</span></td>
-          <td>${dep.richtung}</td>
+          <td><span class="line-badge bus">${dep.linie}</span></td>
+          <td>${dep.richtung.replace(/^Zürich,? ?/, '')}</td>
           ${delayCell}
           ${abfahrtLiveCell}
         `;
