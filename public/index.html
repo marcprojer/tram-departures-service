@@ -93,7 +93,7 @@
         if (dep.category && dep.category.toLowerCase() === 't') {
           badgeClass = `line-badge tram-${dep.linie}`;
         } else if (dep.category && dep.category.toLowerCase() === 'b') {
-          badgeClass = 'line-badge bus';
+          badgeClass = `line-badge bus-${dep.linie}`;
         } else {
           badgeClass = 'line-badge';
         }
@@ -171,7 +171,7 @@
         }
         tr.className = 'departures-data-row';
         tr.innerHTML = `
-          <td><span class="line-badge bus">${dep.linie}</span></td>
+          <td><span class="line-badge bus-${dep.linie}">${dep.linie}</span></td>
           <td>${dep.richtung.replace(/^Zürich,? ?/, '')}</td>
           ${delayCell}
           ${abfahrtLiveCell}
