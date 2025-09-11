@@ -25,7 +25,9 @@
 .line-badge.tram-13 { background: #ffc100; color: #000; }
 .line-badge.tram-14 { background: #008dc5; color: #fff; }
 .line-badge.tram-17 { background: #8e224d; color: #fff; }
-.line-badge.bus { background: #fff; color: #000; border: 1px solid #bbb; }
+.line-badge.bus-33 { background: #dad69c; color: #000000; }
+.line-badge.bus-72 { background: #c6a693; color: #000000; }
+.line-badge.bus-83 { background: #ffffff; color: #000000; border: 1px solid #000000; }
 .line-badge {
   display: inline-block;
   min-width: 2em;
