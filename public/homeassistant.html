@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Abfahrtstabelle</title>
+  <link rel="stylesheet" href="resources/css/led.css">
+  <link rel="icon" type="image/svg+xml" href="resources/images/favicon/tram-svgrepo-com.svg">
+  <!-- Font Awesome CDN for bus icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .headline {
+      font-family: sans-serif;
+      font-size: 2em;
+      font-weight: 400;
+      margin: 0;
+    }
+    .headline-refresh {
+      font-size: 1.3em;
+    }
+  </style>
+</head>
+<body>
+  <!-- header-row removed for Home Assistant view -->
+  <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em;">
+    <div id="clock" class="big-clock" style="text-align: left;"></div>
+    <i id="refresh-icon" class="fa-solid fa-arrows-rotate headline-refresh" style="cursor: pointer; font-size: 2em; margin-right: 1.5em;"></i>
+  </div>
+  <table id="departures" class="departures-table">
+    <tbody>
+      <tr class="departures-header-row">
+        <td>Linie</td>
+        <td>Richtung</td>
+        <td class="verspaetung"></td>
+        <td>Abfahrt (live)</td>
+      </tr>
+    </tbody>
+    <tbody></tbody>
+  </table>
+  <script>
+    async function loadDepartures() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) {
+        refreshIcon.classList.add('rotate-refresh');
+        setTimeout(() => refreshIcon.classList.remove('rotate-refresh'), 1000);
+      }
+      const res = await fetch('/api/abfahrten');
+      const data = await res.json();
+      const now = new Date();
+      // Kombiniere alle Abfahrten (Tram und Bus) und sortiere nach Abfahrtszeit
+      const allDepartures = [...(data.trams || []), ...(data.buses || [])]
+        .filter(dep => dep.abfahrt_live && Math.round((new Date(dep.abfahrt_live) - now) / 60000) >= 0)
+        .sort((a, b) => new Date(a.abfahrt_live) - new Date(b.abfahrt_live))
+        .slice(0, 20); // Zeige z.B. die nächsten 20 Abfahrten
+      const table = document.getElementById('departures');
+      const tbody = table.querySelectorAll('tbody')[1];
+      tbody.innerHTML = '';
+      allDepartures.forEach(dep => {
+        const live = new Date(dep.abfahrt_live);
+        const diffMin = Math.round((live - now) / 60000);
+        let delayCell = '';
+        if (dep.abfahrt_geplant) {
+          const planned = new Date(dep.abfahrt_geplant);
+          if (live > planned) {
+            delayCell = '<td class="verspaetung">&gt;</td>';
+          } else {
+            delayCell = '<td class="verspaetung"></td>';
+          }
+        } else {
+          delayCell = '<td class="verspaetung"></td>';
+        }
+        let abfahrtLiveCell = '<td>-</td>';
+        if (diffMin === 0) {
+          abfahrtLiveCell = `<td><i class='fa-solid fa-bus-simple'></i></td>`;
+        } else if (diffMin > 0) {
+          abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
+        }
+        let badgeClass = '';
+        if (dep.category && dep.category.toLowerCase() === 't') {
+          badgeClass = `line-badge tram-${dep.linie}`;
+        } else if (dep.category && dep.category.toLowerCase() === 'b') {
+          badgeClass = `line-badge bus-${dep.linie}`;
+        } else {
+          badgeClass = 'line-badge';
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'departures-data-row';
+        tr.innerHTML = `
+          <td><span class=\"${badgeClass}\">${dep.linie}</span></td>
+          <td>${dep.richtung.replace(/^Zürich,? ?/, '')}</td>
+          ${delayCell}
+          ${abfahrtLiveCell}
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent = now.toLocaleTimeString();
+    }
+    loadDepartures();
+  setInterval(loadDepartures, 15 * 1000); // alle 15 Sekunden aktualisieren
+    updateClock();
+    setInterval(updateClock, 1000); // Uhr jede Sekunde aktualisieren
+  </script>
+</body>
+</html>
