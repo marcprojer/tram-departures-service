@@ -15,19 +15,19 @@
   vertical-align: middle;
   transition: background 0.2s, color 0.2s;
 }
-.line-badge.tram-3 { background: #00892f; color: #fff; }
-.line-badge.tram-4 { background: #11296f; color: #fff; }
-.line-badge.tram-6 { background: #ca7d3c; color: #000; }
-.line-badge.tram-7 { background: #000; color: #fff; }
-.line-badge.tram-8 { background: #8ab51f; color: #000; }
-.line-badge.tram-9 { background: #11296f; color: #fff; }
-.line-badge.tram-11 { background: #00892f; color: #fff; }
-.line-badge.tram-13 { background: #ffc100; color: #000; }
-.line-badge.tram-14 { background: #008dc5; color: #fff; }
-.line-badge.tram-17 { background: #8e224d; color: #fff; }
-.line-badge.bus-33 { background: #dad69c; color: #000000; }
-.line-badge.bus-72 { background: #c6a693; color: #000000; }
-.line-badge.bus-83 { background: #ffffff; color: #000000; border: 1px solid #000000; }
+.line-badge.tram-3, .line-filter-btn.tram-3 { background: #00892f; color: #fff; }
+.line-badge.tram-4, .line-filter-btn.tram-4 { background: #11296f; color: #fff; }
+.line-badge.tram-6, .line-filter-btn.tram-6 { background: #ca7d3c; color: #000; }
+.line-badge.tram-7, .line-filter-btn.tram-7 { background: #000; color: #fff; }
+.line-badge.tram-8, .line-filter-btn.tram-8 { background: #8ab51f; color: #000; }
+.line-badge.tram-9, .line-filter-btn.tram-9 { background: #11296f; color: #fff; }
+.line-badge.tram-11, .line-filter-btn.tram-11 { background: #00892f; color: #fff; }
+.line-badge.tram-13, .line-filter-btn.tram-13 { background: #ffc100; color: #000; }
+.line-badge.tram-14, .line-filter-btn.tram-14 { background: #008dc5; color: #fff; }
+.line-badge.tram-17, .line-filter-btn.tram-17 { background: #8e224d; color: #fff; }
+.line-badge.bus-33, .line-filter-btn.bus-33 { background: #dad69c; color: #000000; }
+.line-badge.bus-72, .line-filter-btn.bus-72 { background: #c6a693; color: #000000; }
+.line-badge.bus-83, .line-filter-btn.bus-83 { background: #ffffff; color: #000000; border: 1px solid #000000; }
 .line-badge {
   display: inline-block;
   min-width: 2em;
@@ -152,3 +152,32 @@ i.fa-solid.fa-bus-simple {
   letter-spacing: 0;
   font-feature-settings: 'tnum';
 }
+
+/* Line filter buttons */
+.line-filter-btn {
+  cursor: pointer;
+  padding: 0.2em 0.4em;
+  border-radius: 0.3em;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: white;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  background: #11296F; /* Default background */
+}
+
+.line-filter-btn:hover {
+  border: 2px solid white;
+}
+
+.line-filter-btn.active {
+  border: 2px solid white;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.line-filter-btn.all-lines {
+  background-color: #666;
+  margin-right: 0.5em;
+}
+
+

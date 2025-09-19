@@ -23,6 +23,7 @@
   <!-- header-row removed for Home Assistant view -->
   <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em;">
     <div id="clock" class="big-clock" style="text-align: left;"></div>
+    <div id="line-filters" style="display: flex; flex-wrap: wrap; gap: 0.3em; align-items: center;"></div>
     <i id="refresh-icon" class="fa-solid fa-arrows-rotate headline-refresh" style="cursor: pointer; font-size: 2em; margin-right: 1.5em;"></i>
   </div>
   <table id="departures" class="departures-table">
@@ -37,24 +38,88 @@
     <tbody></tbody>
   </table>
   <script>
-    async function loadDepartures() {
-      const refreshIcon = document.getElementById('refresh-icon');
-      if (refreshIcon) {
-        refreshIcon.classList.add('rotate-refresh');
-        setTimeout(() => refreshIcon.classList.remove('rotate-refresh'), 1000);
+    let currentFilter = null; // null = alle Linien anzeigen
+    let allDeparturesData = []; // Globale Variable für alle Abfahrtsdaten
+    
+    function createLineFilterButtons(departures) {
+      const filterContainer = document.getElementById('line-filters');
+      if (!filterContainer) return;
+      
+      // Sammle alle einzigartigen Linien
+      const uniqueLines = [...new Set(departures.map(dep => dep.linie))]
+        .sort((a, b) => {
+          // Sortiere numerisch wenn möglich, sonst alphabetisch
+          const aNum = parseInt(a);
+          const bNum = parseInt(b);
+          if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+          return a.localeCompare(b);
+        });
+      
+      // Lösche bestehende Buttons
+      filterContainer.innerHTML = '';
+      
+      // "Alle" Button
+      const allButton = document.createElement('span');
+      allButton.className = 'line-filter-btn all-lines' + (currentFilter === null ? ' active' : '');
+      allButton.textContent = 'Alle';
+      allButton.onclick = () => setLineFilter(null);
+      filterContainer.appendChild(allButton);
+      
+      // Buttons für jede Linie
+      uniqueLines.forEach(line => {
+        const departure = departures.find(dep => dep.linie === line);
+        const button = document.createElement('span');
+        
+        let buttonClass = 'line-filter-btn';
+        if (departure.category && departure.category.toLowerCase() === 't') {
+          buttonClass += ` tram-${line}`;
+        } else if (departure.category && departure.category.toLowerCase() === 'b') {
+          buttonClass += ` bus-${line}`;
+        }
+        
+        if (currentFilter === line) {
+          buttonClass += ' active';
+        }
+        
+        button.className = buttonClass;
+        button.textContent = line;
+        button.onclick = () => setLineFilter(line);
+        filterContainer.appendChild(button);
+      });
+    }
+    
+    function setLineFilter(line) {
+      currentFilter = line;
+      displayFilteredDepartures();
+      // Update button active states
+      document.querySelectorAll('.line-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      if (line === null) {
+        document.querySelector('.line-filter-btn.all-lines').classList.add('active');
+      } else {
+        document.querySelectorAll('.line-filter-btn').forEach(btn => {
+          if (btn.textContent === line && !btn.classList.contains('all-lines')) {
+            btn.classList.add('active');
+          }
+        });
       }
-      const res = await fetch('/api/abfahrten');
-      const data = await res.json();
+    }
+    
+    function displayFilteredDepartures() {
       const now = new Date();
-      // Kombiniere alle Abfahrten (Tram und Bus) und sortiere nach Abfahrtszeit
-      const allDepartures = [...(data.trams || []), ...(data.buses || [])]
-        .filter(dep => dep.abfahrt_live && Math.round((new Date(dep.abfahrt_live) - now) / 60000) >= 0)
-        .sort((a, b) => new Date(a.abfahrt_live) - new Date(b.abfahrt_live))
-        .slice(0, 20); // Zeige z.B. die nächsten 20 Abfahrten
+      let filteredDepartures = allDeparturesData;
+      
+      if (currentFilter !== null) {
+        filteredDepartures = allDeparturesData.filter(dep => dep.linie === currentFilter);
+      }
+      
       const table = document.getElementById('departures');
       const tbody = table.querySelectorAll('tbody')[1];
       tbody.innerHTML = '';
-      allDepartures.forEach(dep => {
+      
+      filteredDepartures.forEach(dep => {
         const live = new Date(dep.abfahrt_live);
         const diffMin = Math.round((live - now) / 60000);
         let delayCell = '';
@@ -92,6 +157,28 @@
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    async function loadDepartures() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) {
+        refreshIcon.classList.add('rotate-refresh');
+        setTimeout(() => refreshIcon.classList.remove('rotate-refresh'), 1000);
+      }
+      const res = await fetch('/api/abfahrten');
+      const data = await res.json();
+      const now = new Date();
+      // Kombiniere alle Abfahrten (Tram und Bus) und sortiere nach Abfahrtszeit
+      allDeparturesData = [...(data.trams || []), ...(data.buses || [])]
+        .filter(dep => dep.abfahrt_live && Math.round((new Date(dep.abfahrt_live) - now) / 60000) >= 0)
+        .sort((a, b) => new Date(a.abfahrt_live) - new Date(b.abfahrt_live))
+        .slice(0, 20); // Zeige z.B. die nächsten 20 Abfahrten
+      
+      // Erstelle oder aktualisiere die Filter-Buttons
+      createLineFilterButtons(allDeparturesData);
+      
+      // Zeige die gefilterten Abfahrten an
+      displayFilteredDepartures();
     }
     function updateClock() {
       const now = new Date();
