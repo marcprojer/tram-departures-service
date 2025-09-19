@@ -116,7 +116,21 @@
       
       // Nur filtern wenn aktive Filter vorhanden sind
       if (activeFilters.size > 0) {
-        filteredDepartures = allDeparturesData.filter(dep => activeFilters.has(dep.linie));
+        // Bei aktiven Filtern: Alle verfügbaren Daten der ausgewählten Linien verwenden
+        const departuresByLine = {};
+        activeFilters.forEach(line => {
+          departuresByLine[line] = allDeparturesData
+            .filter(dep => dep.linie === line)
+            .slice(0, 8); // Max 8 Abfahrten pro gefilterte Linie aus dem Backend-Cache
+        });
+        
+        // Kombiniere alle Abfahrten und sortiere sie chronologisch
+        filteredDepartures = Object.values(departuresByLine)
+          .flat()
+          .sort((a, b) => new Date(a.abfahrt_live) - new Date(b.abfahrt_live));
+      } else {
+        // Ohne Filter: Nur die nächsten 20 Abfahrten aller Linien anzeigen
+        filteredDepartures = allDeparturesData.slice(0, 20);
       }
       
       const table = document.getElementById('departures');
@@ -176,7 +190,7 @@
       allDeparturesData = [...(data.trams || []), ...(data.buses || [])]
         .filter(dep => dep.abfahrt_live && Math.round((new Date(dep.abfahrt_live) - now) / 60000) >= 0)
         .sort((a, b) => new Date(a.abfahrt_live) - new Date(b.abfahrt_live))
-        .slice(0, 20); // Zeige z.B. die nächsten 20 Abfahrten
+        .slice(0, 50); // Zeige die nächsten 50 Abfahrten (mehr Daten für bessere Filterung)
       
       // Erstelle oder aktualisiere die Filter-Buttons
       createLineFilterButtons(allDeparturesData);
