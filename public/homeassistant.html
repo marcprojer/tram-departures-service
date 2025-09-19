@@ -21,10 +21,10 @@
 </head>
 <body>
   <!-- header-row removed for Home Assistant view -->
-  <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em;">
-    <div id="clock" class="big-clock" style="text-align: left;"></div>
-    <div id="line-filters" style="display: flex; flex-wrap: wrap; gap: 0.3em; align-items: center;"></div>
-    <i id="refresh-icon" class="fa-solid fa-arrows-rotate headline-refresh" style="cursor: pointer; font-size: 2em; margin-right: 1.5em;"></i>
+  <div class="header-grid">
+    <div id="clock" class="big-clock"></div>
+    <div id="line-filters" class="line-filters-container"></div>
+    <i id="refresh-icon" class="fa-solid fa-arrows-rotate refresh-icon"></i>
   </div>
   <table id="departures" class="departures-table">
     <tbody>

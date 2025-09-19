@@ -26,6 +26,7 @@
 .line-badge.tram-14, .line-filter-btn.tram-14 { background: #008dc5; color: #fff; }
 .line-badge.tram-17, .line-filter-btn.tram-17 { background: #8e224d; color: #fff; }
 .line-badge.bus-33, .line-filter-btn.bus-33 { background: #dad69c; color: #000000; }
+.line-badge.bus-46, .line-filter-btn.bus-46 { background: #C1D59F; color: #000000; }
 .line-badge.bus-72, .line-filter-btn.bus-72 { background: #c6a693; color: #000000; }
 .line-badge.bus-83, .line-filter-btn.bus-83 { background: #ffffff; color: #000000; border: 1px solid #000000; }
 .line-badge {
@@ -153,17 +154,49 @@ i.fa-solid.fa-bus-simple {
   font-feature-settings: 'tnum';
 }
 
+/* Header Grid Layout */
+.header-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 2em;
+  width: 100%;
+  align-items: center;
+  margin-bottom: 2em;
+}
+
+.header-grid .big-clock {
+  justify-self: start;
+  margin-left: 0;
+  padding-top: 0;
+}
+
+.line-filters-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: center;
+  justify-content: center;
+}
+
+.refresh-icon {
+  justify-self: end;
+  cursor: pointer;
+  font-size: 3em;
+  margin-right: 0;
+}
+
 /* Line filter buttons */
 .line-filter-btn {
   cursor: pointer;
-  padding: 0.2em 0.4em;
-  border-radius: 0.3em;
-  font-size: 0.9em;
+  padding: 0.27em 0.54em;
+  border-radius: 0.36em;
+  font-size: 1.62em;
   font-weight: bold;
   color: white;
   border: 2px solid transparent;
   transition: all 0.2s;
   background: #11296F; /* Default background */
+  font-family: 'Doto', sans-serif;
 }
 
 .line-filter-btn:hover {
