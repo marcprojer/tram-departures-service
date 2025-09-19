@@ -38,7 +38,7 @@
     <tbody></tbody>
   </table>
   <script>
-    let currentFilter = null; // null = alle Linien anzeigen
+    let activeFilters = new Set(); // Set für mehrere aktive Filter
     let allDeparturesData = []; // Globale Variable für alle Abfahrtsdaten
     
     function createLineFilterButtons(departures) {
@@ -58,12 +58,12 @@
       // Lösche bestehende Buttons
       filterContainer.innerHTML = '';
       
-      // "Alle" Button
-      const allButton = document.createElement('span');
-      allButton.className = 'line-filter-btn all-lines' + (currentFilter === null ? ' active' : '');
-      allButton.textContent = 'Alle';
-      allButton.onclick = () => setLineFilter(null);
-      filterContainer.appendChild(allButton);
+      // "Reset" Button
+      const resetButton = document.createElement('span');
+      resetButton.className = 'line-filter-btn reset-btn';
+      resetButton.textContent = 'Reset';
+      resetButton.onclick = () => resetFilters();
+      filterContainer.appendChild(resetButton);
       
       // Buttons für jede Linie
       uniqueLines.forEach(line => {
@@ -77,42 +77,46 @@
           buttonClass += ` bus-${line}`;
         }
         
-        if (currentFilter === line) {
+        if (activeFilters.has(line)) {
           buttonClass += ' active';
         }
         
         button.className = buttonClass;
         button.textContent = line;
-        button.onclick = () => setLineFilter(line);
+        button.onclick = () => toggleLineFilter(line, button);
         filterContainer.appendChild(button);
       });
     }
     
-    function setLineFilter(line) {
-      currentFilter = line;
+    function toggleLineFilter(line, buttonElement) {
+      if (activeFilters.has(line)) {
+        // Filter entfernen
+        activeFilters.delete(line);
+        buttonElement.classList.remove('active');
+      } else {
+        // Filter hinzufügen
+        activeFilters.add(line);
+        buttonElement.classList.add('active');
+      }
       displayFilteredDepartures();
-      // Update button active states
+    }
+    
+    function resetFilters() {
+      activeFilters.clear();
+      // Alle Button-States zurücksetzen
       document.querySelectorAll('.line-filter-btn').forEach(btn => {
         btn.classList.remove('active');
       });
-      
-      if (line === null) {
-        document.querySelector('.line-filter-btn.all-lines').classList.add('active');
-      } else {
-        document.querySelectorAll('.line-filter-btn').forEach(btn => {
-          if (btn.textContent === line && !btn.classList.contains('all-lines')) {
-            btn.classList.add('active');
-          }
-        });
-      }
+      displayFilteredDepartures();
     }
     
     function displayFilteredDepartures() {
       const now = new Date();
       let filteredDepartures = allDeparturesData;
       
-      if (currentFilter !== null) {
-        filteredDepartures = allDeparturesData.filter(dep => dep.linie === currentFilter);
+      // Nur filtern wenn aktive Filter vorhanden sind
+      if (activeFilters.size > 0) {
+        filteredDepartures = allDeparturesData.filter(dep => activeFilters.has(dep.linie));
       }
       
       const table = document.getElementById('departures');

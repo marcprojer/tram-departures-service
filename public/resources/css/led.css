@@ -208,7 +208,7 @@ i.fa-solid.fa-bus-simple {
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
-.line-filter-btn.all-lines {
+.line-filter-btn.reset-btn {
   background-color: #666;
   margin-right: 0.5em;
 }
