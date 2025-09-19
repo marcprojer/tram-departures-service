@@ -202,8 +202,13 @@
       const now = new Date();
       document.getElementById('clock').textContent = now.toLocaleTimeString();
     }
+    // Refresh-Icon Click-Handler hinzufügen
+    document.getElementById('refresh-icon').addEventListener('click', function() {
+      loadDepartures();
+    });
+
     loadDepartures();
-  setInterval(loadDepartures, 15 * 1000); // alle 15 Sekunden aktualisieren
+    setInterval(loadDepartures, 15 * 1000); // alle 15 Sekunden aktualisieren
     updateClock();
     setInterval(updateClock, 1000); // Uhr jede Sekunde aktualisieren
   </script>
