@@ -2,10 +2,10 @@
   "name": "vbz",
   "version": "1.0.0",
   "description": "## Cheatsheet Git",
-  "main": "server.js",
+  "main": "public/resources/js/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node public/resources/js/server.js"
   },
   "repository": {
     "type": "git",
