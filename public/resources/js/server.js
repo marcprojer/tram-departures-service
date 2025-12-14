@@ -3,7 +3,7 @@ const axios = require('axios');
 const cors = require('cors');
 
 const STATION_KEY = 'Escher-Wyss-Platz'; // Beispiel: Zürich, Escher-Wyss-Platz (id: 8580522)
-const PORT = 3000;
+const PORT = 3001;
 let cachedData = { trams: [], buses: [] };
 
 async function fetchDepartures() {

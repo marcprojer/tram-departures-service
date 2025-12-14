@@ -5,7 +5,7 @@ pipeline {
         DOCKER_IMAGE = 'vbz-tram-service'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         CONTAINER_NAME = 'vbz-tram-departures'
-        APP_PORT = '3000'
+        APP_PORT = '3001'
     }
     
     stages {
@@ -44,7 +44,7 @@ pipeline {
                         docker run -d \
                           --name ${CONTAINER_NAME} \
                           --restart unless-stopped \
-                          -p ${APP_PORT}:3000 \
+                          -p ${APP_PORT}:3001 \
                           -e NODE_ENV=production \
                           -e TZ=Europe/Zurich \
                           ${DOCKER_IMAGE}:latest

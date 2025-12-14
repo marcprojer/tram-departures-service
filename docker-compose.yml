@@ -6,12 +6,12 @@ services:
     container_name: vbz-tram-departures
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
       - NODE_ENV=production
       - TZ=Europe/Zurich
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/abfahrten', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/abfahrten', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 3s
       retries: 3
