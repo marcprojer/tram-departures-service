@@ -159,10 +159,11 @@ i.fa-solid.fa-bus-simple {
 /* Header Grid Layout */
 .header-grid {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr; /* three equal sections */
   gap: 2em;
   width: 100%;
   align-items: center;
+  justify-items: center; /* center items within their grid cells */
   margin-bottom: 2em;
 }
 
@@ -174,14 +175,16 @@ i.fa-solid.fa-bus-simple {
 
 .line-filters-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* keep buttons on a single line */
+  white-space: nowrap;
   gap: 0.5em;
   align-items: center;
   justify-content: center;
+  overflow-x: auto; /* allow horizontal scroll if too many buttons */
 }
 
 .refresh-icon {
-  justify-self: end;
+  justify-self: center; /* align to the same center line as other header items */
   cursor: pointer;
   font-size: 3em;
   margin-right: 0;
@@ -218,6 +221,61 @@ i.fa-solid.fa-bus-simple {
 /* Slightly larger gap after Bus category before first line */
 .line-filter-btn.placeholder-btn.bus-filter {
   margin-right: 0.8em;
+}
+
+/* Responsive: iPad Air landscape optimization */
+@media (max-width: 1180px) {
+  .header-grid {
+    grid-template-columns: 1fr 1.6fr 1fr;
+    gap: 1.2em;
+  }
+  .big-clock {
+    font-size: 2.6em;
+  }
+  .line-filters-container {
+    gap: 0.4em;
+  }
+  .line-filter-btn {
+    font-size: 1.4em;
+    padding: 0.24em 0.5em;
+  }
+  .line-badge {
+    font-size: 0.95em;
+    min-width: 2.2em;
+    padding: 0.12em 0.6em;
+  }
+  .departures-header-row td {
+    font-size: 1em;
+    padding: 0.45em 0.8em;
+  }
+  .departures-data-row td {
+    padding: 0.45em 0.8em;
+  }
+  .verspaetung {
+    width: 2.4em;
+    min-width: 2.4em;
+    font-size: 1.2em;
+  }
+  i.fa-solid.fa-bus-simple {
+    font-size: 1.1em;
+  }
+}
+
+@media (max-width: 1024px) {
+  .header-grid {
+    grid-template-columns: 0.9fr 1.5fr 1fr;
+    gap: 1em;
+  }
+  .big-clock {
+    font-size: 2.4em;
+  }
+  .line-filter-btn {
+    font-size: 1.3em;
+  }
+  .line-badge {
+    font-size: 0.92em;
+    min-width: 2.2em;
+  }
 }
 
 
