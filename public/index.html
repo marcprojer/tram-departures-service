@@ -20,16 +20,13 @@
   </style>
 </head>
 <body>
-  <div class="header-row">
-    <div class="station-banner">
-      <span class="station-name">Escher-Wyss-Platz</span>
-    </div>
+  <!-- header-row removed for Home Assistant view -->
+  <div class="header-grid">
     <div id="clock" class="big-clock"></div>
-  </div>
-  <div style="display: flex; justify-content: flex-start; align-items: center;">
-    <div style="display: flex; align-items: center; gap: 0.5em;">
-      <h1 class="headline">Nächste 10 Tram-Abfahrten</h1>
-      <i id="refresh-icon" class="fa-solid fa-arrows-rotate headline-refresh" style="cursor: pointer;"></i>
+    <div id="line-filters" class="line-filters-container"></div>
+    <div style="display:flex; align-items:center; justify-content:center; gap:0.5em; width:100%;">
+      <i id="refresh-icon" class="fa-solid fa-arrows-rotate refresh-icon" style="cursor:pointer;"></i>
+      <a href="/api/abfahrten" target="_blank" rel="noopener noreferrer" class="api-link" style="font-family:sans-serif; font-size:1.3em; text-decoration:none; padding:0.2em 0.6em; border:1px solid #ccc; border-radius:4px; color:#fff;">API</a>
     </div>
   </div>
   <table id="departures" class="departures-table">
@@ -44,40 +41,169 @@
     <tbody></tbody>
   </table>
   <script>
-    async function loadDepartures() {
-      const refreshIcon = document.getElementById('refresh-icon');
-      if (refreshIcon) {
-        refreshIcon.classList.add('rotate-refresh');
-        setTimeout(() => refreshIcon.classList.remove('rotate-refresh'), 1000);
+    let activeFilters = new Set(); // Set für mehrere aktive Filter
+    let activeCategory = null; // 'tram' | 'bus' | null
+    let allDeparturesData = []; // Globale Variable für alle Abfahrtsdaten
+    
+    function createLineFilterButtons(departures) {
+      const filterContainer = document.getElementById('line-filters');
+      if (!filterContainer) return;
+      
+      // Sammle alle einzigartigen Linien
+      const uniqueLines = [...new Set(departures.map(dep => dep.linie))]
+        .sort((a, b) => {
+          // Sortiere numerisch wenn möglich, sonst alphabetisch
+          const aNum = parseInt(a);
+          const bNum = parseInt(b);
+          if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+          return a.localeCompare(b);
+        });
+      
+      // Lösche bestehende Buttons
+      filterContainer.innerHTML = '';
+      
+      // "Reset" Button
+      const resetButton = document.createElement('span');
+      resetButton.className = 'line-filter-btn reset-btn';
+      resetButton.textContent = 'Reset';
+      resetButton.onclick = () => resetFilters();
+      filterContainer.appendChild(resetButton);
+
+        // Kategorie-Buttons direkt nach Reset einfügen
+        const placeholder1 = document.createElement('span');
+        placeholder1.className = 'line-filter-btn placeholder-btn tram-filter';
+        placeholder1.textContent = 'Tram';
+        placeholder1.onclick = () => selectCategory('tram');
+        if (activeCategory === 'tram') {
+          placeholder1.classList.add('active');
+        }
+        filterContainer.appendChild(placeholder1);
+
+        const placeholder2 = document.createElement('span');
+        placeholder2.className = 'line-filter-btn placeholder-btn bus-filter';
+        placeholder2.textContent = 'Bus';
+        placeholder2.onclick = () => selectCategory('bus');
+        if (activeCategory === 'bus') {
+          placeholder2.classList.add('active');
+        }
+        filterContainer.appendChild(placeholder2);
+      
+      // Buttons für jede Linie
+      uniqueLines.forEach(line => {
+        const departure = departures.find(dep => dep.linie === line);
+        const button = document.createElement('span');
+        
+        let buttonClass = 'line-filter-btn';
+        if (departure.category && departure.category.toLowerCase() === 't') {
+          buttonClass += ` tram-${line}`;
+        } else if (departure.category && departure.category.toLowerCase() === 'b') {
+          buttonClass += ` bus-${line}`;
+        }
+        
+        // Markiere Buttons als aktiv, wenn entweder explizit gefiltert
+        // oder eine Kategorie aktiv ist, die diese Linie umfasst
+        if (activeFilters.has(line) ||
+            (activeCategory === 'tram' && (departure.category || '').toLowerCase() === 't') ||
+            (activeCategory === 'bus' && (departure.category || '').toLowerCase() === 'b')) {
+          buttonClass += ' active';
+        }
+        
+        button.className = buttonClass;
+        button.textContent = line;
+        button.onclick = () => toggleLineFilter(line, button);
+        filterContainer.appendChild(button);
+      });
+
+      // Kategorie-Buttons wurden bereits eingefügt
+    }
+
+    function selectCategory(category) {
+      // Toggle-Logik: Wenn dieselbe Kategorie bereits aktiv ist, deaktiviere sie
+      if (activeCategory === category) {
+        activeCategory = null;
+        activeFilters.clear();
+      } else {
+        // Setze die aktive Kategorie und fülle activeFilters mit allen Linien dieser Kategorie
+        activeCategory = category;
+        activeFilters.clear();
+        const linesOfCategory = [...new Set(allDeparturesData
+          .filter(dep => {
+            const cat = (dep.category || '').toLowerCase();
+            return (category === 'tram' && cat === 't') || (category === 'bus' && cat === 'b');
+          })
+          .map(dep => dep.linie))];
+        linesOfCategory.forEach(l => activeFilters.add(l));
       }
-      const refreshIconBus = document.getElementById('refresh-icon-bus');
-      if (refreshIconBus) {
-        refreshIconBus.classList.add('rotate-refresh');
-        setTimeout(() => refreshIconBus.classList.remove('rotate-refresh'), 1000);
+      // Buttons neu erstellen, damit Aktiv-Status stimmt
+      createLineFilterButtons(allDeparturesData);
+      // Abfahrten neu anzeigen
+      displayFilteredDepartures();
+    }
+    
+    function toggleLineFilter(line, buttonElement) {
+      if (activeFilters.has(line)) {
+        // Filter entfernen
+        activeFilters.delete(line);
+        buttonElement.classList.remove('active');
+      } else {
+        // Filter hinzufügen
+        activeFilters.add(line);
+        buttonElement.classList.add('active');
       }
-      const res = await fetch('/api/abfahrten');
-      const data = await res.json();
-      // Trams
-  const tramTable = document.getElementById('departures');
-  // Die erste tbody ist der Header, die zweite ist für die Daten
-  const tramTbody = tramTable.querySelectorAll('tbody')[1];
-  tramTbody.innerHTML = '';
-      // Zeige die nächsten 10 zukünftigen Abfahrten aus den ersten 15 gelieferten
+      displayFilteredDepartures();
+    }
+    
+    function resetFilters() {
+      activeFilters.clear();
+      activeCategory = null;
+      // Alle Button-States zurücksetzen
+      document.querySelectorAll('.line-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      displayFilteredDepartures();
+    }
+    
+    function displayFilteredDepartures() {
       const now = new Date();
-      // Zeige die nächsten 10 zukünftigen Abfahrten, fallback auf geplante Zeit wenn live fehlt
-      const futureTrams = data.trams
-        .filter(dep => {
-          const timeStr = dep.abfahrt_live || dep.abfahrt_geplant;
-          if (!timeStr) return false;
-          const minutes = Math.round((new Date(timeStr) - now) / 60000);
-          return minutes >= 0;
-        })
-        .slice(0, 10);
-      futureTrams.forEach(dep => {
+      let filteredDepartures = allDeparturesData;
+      
+      // Nur filtern wenn aktive Filter vorhanden sind
+      if (activeFilters.size > 0) {
+        // Bei aktiven Filtern: Alle verfügbaren Daten der ausgewählten Linien verwenden
+        const departuresByLine = {};
+        activeFilters.forEach(line => {
+          departuresByLine[line] = allDeparturesData
+            .filter(dep => dep.linie === line)
+            .slice(0, 8); // Max 8 Abfahrten pro gefilterte Linie aus dem Backend-Cache
+        });
+        
+        // Kombiniere alle Abfahrten und sortiere sie chronologisch
+        filteredDepartures = Object.values(departuresByLine)
+          .flat()
+          .sort((a, b) => {
+            const aTime = new Date(a.abfahrt_live || a.abfahrt_geplant);
+            const bTime = new Date(b.abfahrt_live || b.abfahrt_geplant);
+            return aTime - bTime;
+          });
+      } else {
+        // Ohne Linien-Filter: ggf. nach aktiver Kategorie filtern, sonst alle
+        const base = activeCategory
+          ? allDeparturesData.filter(dep => {
+              const cat = (dep.category || '').toLowerCase();
+              return (activeCategory === 'tram' && cat === 't') || (activeCategory === 'bus' && cat === 'b');
+            })
+          : allDeparturesData;
+        filteredDepartures = base.slice(0, 20);
+      }
+      
+      const table = document.getElementById('departures');
+      const tbody = table.querySelectorAll('tbody')[1];
+      tbody.innerHTML = '';
+      
+      filteredDepartures.forEach(dep => {
         const refTimeStr = dep.abfahrt_live || dep.abfahrt_geplant;
         const refTime = refTimeStr ? new Date(refTimeStr) : null;
         const diffMin = refTime ? Math.round((refTime - now) / 60000) : null;
-        const tr = document.createElement('tr');
         let delayCell = '';
         if (dep.abfahrt_geplant && dep.abfahrt_live) {
           const planned = new Date(dep.abfahrt_geplant);
@@ -99,7 +225,6 @@
         } else if (typeof diffMin === 'number' && diffMin > 0) {
           abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
         }
-        tr.className = 'departures-data-row';
         let badgeClass = '';
         if (dep.category && dep.category.toLowerCase() === 't') {
           badgeClass = `line-badge tram-${dep.linie}`;
@@ -108,94 +233,59 @@
         } else {
           badgeClass = 'line-badge';
         }
+        const tr = document.createElement('tr');
+        tr.className = 'departures-data-row';
         tr.innerHTML = `
-
           <td><span class=\"${badgeClass}\">${dep.linie}</span></td>
           <td>${dep.richtung.replace(/^Zürich,? ?/, '')}</td>
           ${delayCell}
           ${abfahrtLiveCell}
         `;
-        tramTbody.appendChild(tr);
+        tbody.appendChild(tr);
       });
+    }
 
-      // Busse
-      let busTable = document.getElementById('bus-departures');
-      if (!busTable) {
-        const busTitleWrap = document.createElement('div');
-        busTitleWrap.style.display = 'flex';
-        busTitleWrap.style.alignItems = 'center';
-        busTitleWrap.style.gap = '0.5em';
-        busTitleWrap.style.marginTop = '2em';
-        const busTitle = document.createElement('h1');
-        busTitle.textContent = 'Nächste 10 Bus-Abfahrten';
-        busTitle.className = 'headline';
-        const busRefreshIcon = document.createElement('i');
-        busRefreshIcon.className = 'fa-solid fa-arrows-rotate headline-refresh';
-        busRefreshIcon.id = 'refresh-icon-bus';
-        busRefreshIcon.style.cursor = 'pointer';
-        busTitleWrap.appendChild(busTitle);
-        busTitleWrap.appendChild(busRefreshIcon);
-        document.body.appendChild(busTitleWrap);
-        busTable = document.createElement('table');
-        busTable.id = 'bus-departures';
-        busTable.className = 'departures-table';
-        busTable.innerHTML = `
-          <tbody>
-            <tr class="departures-header-row">
-              <td>Linie</td>
-              <td>Richtung</td>
-              <td class="verspaetung"></td>
-              <td>Abfahrt (live)</td>
-            </tr>
-          </tbody>
-          <tbody></tbody>
-        `;
-        document.body.appendChild(busTable);
+    async function loadDepartures() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) {
+        refreshIcon.classList.add('rotate-refresh');
+        setTimeout(() => refreshIcon.classList.remove('rotate-refresh'), 1000);
       }
-  // Die erste tbody ist der Header, die zweite ist für die Daten
-  const busTbody = busTable.querySelectorAll('tbody')[1];
-  busTbody.innerHTML = '';
-      // Zeige die nächsten 10 zukünftigen Bus-Abfahrten aus den ersten 15 gelieferten
-      const futureBuses = data.buses
-        .filter(dep => dep.abfahrt_live && Math.round((new Date(dep.abfahrt_live) - now) / 60000) >= 0)
-        .slice(0, 10);
-      futureBuses.forEach(dep => {
-        const live = new Date(dep.abfahrt_live);
-        const diffMin = Math.round((live - now) / 60000);
-        const tr = document.createElement('tr');
-        let delayCell = '';
-        if (dep.abfahrt_geplant) {
-          const planned = new Date(dep.abfahrt_geplant);
-          if (live > planned) {
-            delayCell = '<td class="verspaetung">&gt;</td>';
-          } else {
-            delayCell = '<td class="verspaetung"></td>';
-          }
-        } else {
-          delayCell = '<td class="verspaetung"></td>';
-        }
-        let abfahrtLiveCell = '<td>-</td>';
-        if (diffMin === 0) {
-          abfahrtLiveCell = `<td><i class='fa-solid fa-bus-simple'></i></td>`;
-        } else if (diffMin > 0) {
-          abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
-        }
-        tr.className = 'departures-data-row';
-        tr.innerHTML = `
-          <td><span class="line-badge bus-${dep.linie}">${dep.linie}</span></td>
-          <td>${dep.richtung.replace(/^Zürich,? ?/, '')}</td>
-          ${delayCell}
-          ${abfahrtLiveCell}
-        `;
-        busTbody.appendChild(tr);
-      });
+      const res = await fetch('/api/abfahrten');
+      const data = await res.json();
+      const now = new Date();
+      // Kombiniere alle Abfahrten (Tram und Bus) und sortiere nach Abfahrtszeit
+      allDeparturesData = [...(data.trams || []), ...(data.buses || [])]
+        .filter(dep => {
+          const timeStr = dep.abfahrt_live || dep.abfahrt_geplant;
+          if (!timeStr) return false;
+          const minutes = Math.round((new Date(timeStr) - now) / 60000);
+          return minutes >= 0;
+        })
+        .sort((a, b) => {
+          const aTime = new Date(a.abfahrt_live || a.abfahrt_geplant);
+          const bTime = new Date(b.abfahrt_live || b.abfahrt_geplant);
+          return aTime - bTime;
+        })
+        .slice(0, 50); // Zeige die nächsten 50 Abfahrten (mehr Daten für bessere Filterung)
+      
+      // Erstelle oder aktualisiere die Filter-Buttons
+      createLineFilterButtons(allDeparturesData);
+      
+      // Zeige die gefilterten Abfahrten an
+      displayFilteredDepartures();
     }
     function updateClock() {
       const now = new Date();
       document.getElementById('clock').textContent = now.toLocaleTimeString();
     }
+    // Refresh-Icon Click-Handler hinzufügen
+    document.getElementById('refresh-icon').addEventListener('click', function() {
+      loadDepartures();
+    });
+
     loadDepartures();
-  setInterval(loadDepartures, 15 * 1000); // alle 15 Sekunden aktualisieren
+    setInterval(loadDepartures, 15 * 1000); // alle 15 Sekunden aktualisieren
     updateClock();
     setInterval(updateClock, 1000); // Uhr jede Sekunde aktualisieren
   </script>

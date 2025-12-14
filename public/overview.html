@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Abfahrtstabelle</title>
+  <link rel="stylesheet" href="resources/css/led.css">
+  <link rel="icon" type="image/svg+xml" href="resources/images/favicon/tram-svgrepo-com.svg">
+  <!-- Font Awesome CDN for bus icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .headline {
+      font-family: sans-serif;
+      font-size: 2em;
+      font-weight: 400;
+      margin: 0;
+    }
+    .headline-refresh {
+      font-size: 1.3em;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-row">
+    <div class="station-banner">
+      <span class="station-name">Escher-Wyss-Platz</span>
+    </div>
+    <div id="clock" class="big-clock"></div>
+  </div>
+  <div style="display: flex; justify-content: flex-start; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 0.5em;">
+      <h1 class="headline">Nächste 10 Tram-Abfahrten</h1>
+      <i id="refresh-icon" class="fa-solid fa-arrows-rotate headline-refresh" style="cursor: pointer;"></i>
+    </div>
+  </div>
+  <table id="departures" class="departures-table">
+    <tbody>
+      <tr class="departures-header-row">
+        <td>Linie</td>
+        <td>Richtung</td>
+        <td class="verspaetung"></td>
+        <td>Abfahrt (live)</td>
+      </tr>
+    </tbody>
+    <tbody></tbody>
+  </table>
+  <script>
+    async function loadDepartures() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) {
+        refreshIcon.classList.add('rotate-refresh');
+        setTimeout(() => refreshIcon.classList.remove('rotate-refresh'), 1000);
+      }
+      const refreshIconBus = document.getElementById('refresh-icon-bus');
+      if (refreshIconBus) {
+        refreshIconBus.classList.add('rotate-refresh');
+        setTimeout(() => refreshIconBus.classList.remove('rotate-refresh'), 1000);
+      }
+      const res = await fetch('/api/abfahrten');
+      const data = await res.json();
+      // Trams
+  const tramTable = document.getElementById('departures');
+  // Die erste tbody ist der Header, die zweite ist für die Daten
+  const tramTbody = tramTable.querySelectorAll('tbody')[1];
+  tramTbody.innerHTML = '';
+      // Zeige die nächsten 10 zukünftigen Abfahrten aus den ersten 15 gelieferten
+      const now = new Date();
+      // Zeige die nächsten 10 zukünftigen Abfahrten, fallback auf geplante Zeit wenn live fehlt
+      const futureTrams = data.trams
+        .filter(dep => {
+          const timeStr = dep.abfahrt_live || dep.abfahrt_geplant;
+          if (!timeStr) return false;
+          const minutes = Math.round((new Date(timeStr) - now) / 60000);
+          return minutes >= 0;
+        })
+        .slice(0, 10);
+      futureTrams.forEach(dep => {
+        const refTimeStr = dep.abfahrt_live || dep.abfahrt_geplant;
+        const refTime = refTimeStr ? new Date(refTimeStr) : null;
+        const diffMin = refTime ? Math.round((refTime - now) / 60000) : null;
+        const tr = document.createElement('tr');
+        let delayCell = '';
+        if (dep.abfahrt_geplant && dep.abfahrt_live) {
+          const planned = new Date(dep.abfahrt_geplant);
+          const live = new Date(dep.abfahrt_live);
+          if (live > planned) {
+            delayCell = '<td class="verspaetung">&gt;</td>';
+          } else {
+            delayCell = '<td class="verspaetung"></td>';
+          }
+        } else if (dep.abfahrt_geplant && !dep.abfahrt_live) {
+          // Wenn keine Live-Daten vorhanden sind, Stern anzeigen
+          delayCell = '<td class="verspaetung">*</td>';
+        } else {
+          delayCell = '<td class="verspaetung"></td>';
+        }
+        let abfahrtLiveCell = '<td>-</td>';
+        if (diffMin === 0) {
+          abfahrtLiveCell = `<td><i class='fa-solid fa-bus-simple'></i></td>`;
+        } else if (typeof diffMin === 'number' && diffMin > 0) {
+          abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
+        }
+        tr.className = 'departures-data-row';
+        let badgeClass = '';
+        if (dep.category && dep.category.toLowerCase() === 't') {
+          badgeClass = `line-badge tram-${dep.linie}`;
+        } else if (dep.category && dep.category.toLowerCase() === 'b') {
+          badgeClass = `line-badge bus-${dep.linie}`;
+        } else {
+          badgeClass = 'line-badge';
+        }
+        tr.innerHTML = `
+
+          <td><span class=\"${badgeClass}\">${dep.linie}</span></td>
+          <td>${dep.richtung.replace(/^Zürich,? ?/, '')}</td>
+          ${delayCell}
+          ${abfahrtLiveCell}
+        `;
+        tramTbody.appendChild(tr);
+      });
+
+      // Busse
+      let busTable = document.getElementById('bus-departures');
+      if (!busTable) {
+        const busTitleWrap = document.createElement('div');
+        busTitleWrap.style.display = 'flex';
+        busTitleWrap.style.alignItems = 'center';
+        busTitleWrap.style.gap = '0.5em';
+        busTitleWrap.style.marginTop = '2em';
+        const busTitle = document.createElement('h1');
+        busTitle.textContent = 'Nächste 10 Bus-Abfahrten';
+        busTitle.className = 'headline';
+        const busRefreshIcon = document.createElement('i');
+        busRefreshIcon.className = 'fa-solid fa-arrows-rotate headline-refresh';
+        busRefreshIcon.id = 'refresh-icon-bus';
+        busRefreshIcon.style.cursor = 'pointer';
+        busTitleWrap.appendChild(busTitle);
+        busTitleWrap.appendChild(busRefreshIcon);
+        document.body.appendChild(busTitleWrap);
+        busTable = document.createElement('table');
+        busTable.id = 'bus-departures';
+        busTable.className = 'departures-table';
+        busTable.innerHTML = `
+          <tbody>
+            <tr class="departures-header-row">
+              <td>Linie</td>
+              <td>Richtung</td>
+              <td class="verspaetung"></td>
+              <td>Abfahrt (live)</td>
+            </tr>
+          </tbody>
+          <tbody></tbody>
+        `;
+        document.body.appendChild(busTable);
+      }
+  // Die erste tbody ist der Header, die zweite ist für die Daten
+  const busTbody = busTable.querySelectorAll('tbody')[1];
+  busTbody.innerHTML = '';
+      // Zeige die nächsten 10 zukünftigen Bus-Abfahrten aus den ersten 15 gelieferten
+      const futureBuses = data.buses
+        .filter(dep => dep.abfahrt_live && Math.round((new Date(dep.abfahrt_live) - now) / 60000) >= 0)
+        .slice(0, 10);
+      futureBuses.forEach(dep => {
+        const live = new Date(dep.abfahrt_live);
+        const diffMin = Math.round((live - now) / 60000);
+        const tr = document.createElement('tr');
+        let delayCell = '';
+        if (dep.abfahrt_geplant) {
+          const planned = new Date(dep.abfahrt_geplant);
+          if (live > planned) {
+            delayCell = '<td class="verspaetung">&gt;</td>';
+          } else {
+            delayCell = '<td class="verspaetung"></td>';
+          }
+        } else {
+          delayCell = '<td class="verspaetung"></td>';
+        }
+        let abfahrtLiveCell = '<td>-</td>';
+        if (diffMin === 0) {
+          abfahrtLiveCell = `<td><i class='fa-solid fa-bus-simple'></i></td>`;
+        } else if (diffMin > 0) {
+          abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
+        }
+        tr.className = 'departures-data-row';
+        tr.innerHTML = `
+          <td><span class="line-badge bus-${dep.linie}">${dep.linie}</span></td>
+          <td>${dep.richtung.replace(/^Zürich,? ?/, '')}</td>
+          ${delayCell}
+          ${abfahrtLiveCell}
+        `;
+        busTbody.appendChild(tr);
+      });
+    }
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent = now.toLocaleTimeString();
+    }
+    loadDepartures();
+  setInterval(loadDepartures, 15 * 1000); // alle 15 Sekunden aktualisieren
+    updateClock();
+    setInterval(updateClock, 1000); // Uhr jede Sekunde aktualisieren
+  </script>
+</body>
+</html>
