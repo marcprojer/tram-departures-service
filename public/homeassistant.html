@@ -42,6 +42,7 @@
   </table>
   <script>
     let activeFilters = new Set(); // Set für mehrere aktive Filter
+    let activeCategory = null; // 'tram' | 'bus' | null
     let allDeparturesData = []; // Globale Variable für alle Abfahrtsdaten
     
     function createLineFilterButtons(departures) {
@@ -67,6 +68,25 @@
       resetButton.textContent = 'Reset';
       resetButton.onclick = () => resetFilters();
       filterContainer.appendChild(resetButton);
+
+        // Kategorie-Buttons direkt nach Reset einfügen
+        const placeholder1 = document.createElement('span');
+        placeholder1.className = 'line-filter-btn placeholder-btn tram-filter';
+        placeholder1.textContent = 'Tram';
+        placeholder1.onclick = () => selectCategory('tram');
+        if (activeCategory === 'tram') {
+          placeholder1.classList.add('active');
+        }
+        filterContainer.appendChild(placeholder1);
+
+        const placeholder2 = document.createElement('span');
+        placeholder2.className = 'line-filter-btn placeholder-btn bus-filter';
+        placeholder2.textContent = 'Bus';
+        placeholder2.onclick = () => selectCategory('bus');
+        if (activeCategory === 'bus') {
+          placeholder2.classList.add('active');
+        }
+        filterContainer.appendChild(placeholder2);
       
       // Buttons für jede Linie
       uniqueLines.forEach(line => {
@@ -80,7 +100,11 @@
           buttonClass += ` bus-${line}`;
         }
         
-        if (activeFilters.has(line)) {
+        // Markiere Buttons als aktiv, wenn entweder explizit gefiltert
+        // oder eine Kategorie aktiv ist, die diese Linie umfasst
+        if (activeFilters.has(line) ||
+            (activeCategory === 'tram' && (departure.category || '').toLowerCase() === 't') ||
+            (activeCategory === 'bus' && (departure.category || '').toLowerCase() === 'b')) {
           buttonClass += ' active';
         }
         
@@ -89,6 +113,31 @@
         button.onclick = () => toggleLineFilter(line, button);
         filterContainer.appendChild(button);
       });
+
+      // Kategorie-Buttons wurden bereits eingefügt
+    }
+
+    function selectCategory(category) {
+      // Toggle-Logik: Wenn dieselbe Kategorie bereits aktiv ist, deaktiviere sie
+      if (activeCategory === category) {
+        activeCategory = null;
+        activeFilters.clear();
+      } else {
+        // Setze die aktive Kategorie und fülle activeFilters mit allen Linien dieser Kategorie
+        activeCategory = category;
+        activeFilters.clear();
+        const linesOfCategory = [...new Set(allDeparturesData
+          .filter(dep => {
+            const cat = (dep.category || '').toLowerCase();
+            return (category === 'tram' && cat === 't') || (category === 'bus' && cat === 'b');
+          })
+          .map(dep => dep.linie))];
+        linesOfCategory.forEach(l => activeFilters.add(l));
+      }
+      // Buttons neu erstellen, damit Aktiv-Status stimmt
+      createLineFilterButtons(allDeparturesData);
+      // Abfahrten neu anzeigen
+      displayFilteredDepartures();
     }
     
     function toggleLineFilter(line, buttonElement) {
@@ -106,6 +155,7 @@
     
     function resetFilters() {
       activeFilters.clear();
+      activeCategory = null;
       // Alle Button-States zurücksetzen
       document.querySelectorAll('.line-filter-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -136,8 +186,14 @@
             return aTime - bTime;
           });
       } else {
-        // Ohne Filter: Nur die nächsten 20 Abfahrten aller Linien anzeigen
-        filteredDepartures = allDeparturesData.slice(0, 20);
+        // Ohne Linien-Filter: ggf. nach aktiver Kategorie filtern, sonst alle
+        const base = activeCategory
+          ? allDeparturesData.filter(dep => {
+              const cat = (dep.category || '').toLowerCase();
+              return (activeCategory === 'tram' && cat === 't') || (activeCategory === 'bus' && cat === 'b');
+            })
+          : allDeparturesData;
+        filteredDepartures = base.slice(0, 20);
       }
       
       const table = document.getElementById('departures');

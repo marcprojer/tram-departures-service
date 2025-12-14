@@ -212,7 +212,12 @@ i.fa-solid.fa-bus-simple {
 
 .line-filter-btn.reset-btn {
   background-color: #666;
-  margin-right: 0.5em;
+  margin-right: 0.8em; /* larger gap after Reset */
+}
+
+/* Slightly larger gap after Bus category before first line */
+.line-filter-btn.placeholder-btn.bus-filter {
+  margin-right: 0.8em;
 }
 
 
