@@ -64,28 +64,39 @@
   tramTbody.innerHTML = '';
       // Zeige die nächsten 10 zukünftigen Abfahrten aus den ersten 15 gelieferten
       const now = new Date();
+      // Zeige die nächsten 10 zukünftigen Abfahrten, fallback auf geplante Zeit wenn live fehlt
       const futureTrams = data.trams
-        .filter(dep => dep.abfahrt_live && Math.round((new Date(dep.abfahrt_live) - now) / 60000) >= 0)
+        .filter(dep => {
+          const timeStr = dep.abfahrt_live || dep.abfahrt_geplant;
+          if (!timeStr) return false;
+          const minutes = Math.round((new Date(timeStr) - now) / 60000);
+          return minutes >= 0;
+        })
         .slice(0, 10);
       futureTrams.forEach(dep => {
-        const live = new Date(dep.abfahrt_live);
-        const diffMin = Math.round((live - now) / 60000);
+        const refTimeStr = dep.abfahrt_live || dep.abfahrt_geplant;
+        const refTime = refTimeStr ? new Date(refTimeStr) : null;
+        const diffMin = refTime ? Math.round((refTime - now) / 60000) : null;
         const tr = document.createElement('tr');
         let delayCell = '';
-        if (dep.abfahrt_geplant) {
+        if (dep.abfahrt_geplant && dep.abfahrt_live) {
           const planned = new Date(dep.abfahrt_geplant);
+          const live = new Date(dep.abfahrt_live);
           if (live > planned) {
             delayCell = '<td class="verspaetung">&gt;</td>';
           } else {
             delayCell = '<td class="verspaetung"></td>';
           }
+        } else if (dep.abfahrt_geplant && !dep.abfahrt_live) {
+          // Wenn keine Live-Daten vorhanden sind, Stern anzeigen
+          delayCell = '<td class="verspaetung">*</td>';
         } else {
           delayCell = '<td class="verspaetung"></td>';
         }
         let abfahrtLiveCell = '<td>-</td>';
         if (diffMin === 0) {
           abfahrtLiveCell = `<td><i class='fa-solid fa-bus-simple'></i></td>`;
-        } else if (diffMin > 0) {
+        } else if (typeof diffMin === 'number' && diffMin > 0) {
           abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
         }
         tr.className = 'departures-data-row';
