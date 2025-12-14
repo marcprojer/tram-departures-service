@@ -24,7 +24,10 @@
   <div class="header-grid">
     <div id="clock" class="big-clock"></div>
     <div id="line-filters" class="line-filters-container"></div>
-    <i id="refresh-icon" class="fa-solid fa-arrows-rotate refresh-icon"></i>
+    <div style="display:flex; align-items:center; justify-content:flex-end; gap:0.5em;">
+      <i id="refresh-icon" class="fa-solid fa-arrows-rotate refresh-icon" style="cursor:pointer;"></i>
+      <a href="/api/abfahrten" target="_blank" rel="noopener noreferrer" class="api-link" style="font-family:sans-serif; font-size:1.3em; text-decoration:none; padding:0.2em 0.6em; border:1px solid #ccc; border-radius:4px; color:#fff;">API</a>
+    </div>
   </div>
   <table id="departures" class="departures-table">
     <tbody>
@@ -127,7 +130,11 @@
         // Kombiniere alle Abfahrten und sortiere sie chronologisch
         filteredDepartures = Object.values(departuresByLine)
           .flat()
-          .sort((a, b) => new Date(a.abfahrt_live) - new Date(b.abfahrt_live));
+          .sort((a, b) => {
+            const aTime = new Date(a.abfahrt_live || a.abfahrt_geplant);
+            const bTime = new Date(b.abfahrt_live || b.abfahrt_geplant);
+            return aTime - bTime;
+          });
       } else {
         // Ohne Filter: Nur die nächsten 20 Abfahrten aller Linien anzeigen
         filteredDepartures = allDeparturesData.slice(0, 20);
@@ -138,23 +145,28 @@
       tbody.innerHTML = '';
       
       filteredDepartures.forEach(dep => {
-        const live = new Date(dep.abfahrt_live);
-        const diffMin = Math.round((live - now) / 60000);
+        const refTimeStr = dep.abfahrt_live || dep.abfahrt_geplant;
+        const refTime = refTimeStr ? new Date(refTimeStr) : null;
+        const diffMin = refTime ? Math.round((refTime - now) / 60000) : null;
         let delayCell = '';
-        if (dep.abfahrt_geplant) {
+        if (dep.abfahrt_geplant && dep.abfahrt_live) {
           const planned = new Date(dep.abfahrt_geplant);
+          const live = new Date(dep.abfahrt_live);
           if (live > planned) {
             delayCell = '<td class="verspaetung">&gt;</td>';
           } else {
             delayCell = '<td class="verspaetung"></td>';
           }
+        } else if (dep.abfahrt_geplant && !dep.abfahrt_live) {
+          // Wenn keine Live-Daten vorhanden sind, Stern anzeigen
+          delayCell = '<td class="verspaetung">*</td>';
         } else {
           delayCell = '<td class="verspaetung"></td>';
         }
         let abfahrtLiveCell = '<td>-</td>';
         if (diffMin === 0) {
           abfahrtLiveCell = `<td><i class='fa-solid fa-bus-simple'></i></td>`;
-        } else if (diffMin > 0) {
+        } else if (typeof diffMin === 'number' && diffMin > 0) {
           abfahrtLiveCell = `<td class='minutenanzeige'>${diffMin}'</td>`;
         }
         let badgeClass = '';
@@ -188,8 +200,17 @@
       const now = new Date();
       // Kombiniere alle Abfahrten (Tram und Bus) und sortiere nach Abfahrtszeit
       allDeparturesData = [...(data.trams || []), ...(data.buses || [])]
-        .filter(dep => dep.abfahrt_live && Math.round((new Date(dep.abfahrt_live) - now) / 60000) >= 0)
-        .sort((a, b) => new Date(a.abfahrt_live) - new Date(b.abfahrt_live))
+        .filter(dep => {
+          const timeStr = dep.abfahrt_live || dep.abfahrt_geplant;
+          if (!timeStr) return false;
+          const minutes = Math.round((new Date(timeStr) - now) / 60000);
+          return minutes >= 0;
+        })
+        .sort((a, b) => {
+          const aTime = new Date(a.abfahrt_live || a.abfahrt_geplant);
+          const bTime = new Date(b.abfahrt_live || b.abfahrt_geplant);
+          return aTime - bTime;
+        })
         .slice(0, 50); // Zeige die nächsten 50 Abfahrten (mehr Daten für bessere Filterung)
       
       // Erstelle oder aktualisiere die Filter-Buttons
